@@ -1,0 +1,149 @@
+
+#!/bin/bash
+
+# Title:  Python Development Tools
+# Author: Bruno Crema Ferreira - MIT License
+
+
+#==================================
+# Functions
+#==================================
+
+devstop() {
+    deactivate
+    unset DEV_STARTED
+
+    if [ -n "${_OLD_PS1:-}" ] ; then
+        PS1="${_OLD_PS1:-}"
+        export PS1
+        unset _OLD_PS1
+    fi
+}
+
+devclean() {
+
+    log "Removing Python Temp Files" title
+
+    find . -name "*.pyc" -not -path "./.venv/*" -exec rm -fv {} \;
+    find . -name "__pycache__" -not -path "./.venv/*" -exec rm -rfv {} \;
+
+    log "All python temp files were removed." success
+}
+
+devpack(){
+
+    log "Package Generation" title
+
+    devclean
+    local base_current_dir_name=$(basename "$PWD")
+    
+    timestamp=$(date +"%Y%m%d.%H.%M.%S")
+    output_file="${PACKAGES_DIRECTORY}/${timestamp}-${base_current_dir_name}.zip"
+
+    zip -r "$output_file" . -x "./.*" -x "./*.zip"
+    log "Package file '$output_file' was created." success
+}
+
+
+devreq(){
+
+    log "Updating requirements.txt..." title
+
+    temp_file=$(mktemp)
+
+    # Read each line from requirements.txt
+    while IFS= read -r line; do
+
+        # Check if the line is empty
+        if [[ "$line" == \#* || -z "$line" ]]; then
+            echo "$line" >> "$temp_file"
+        else
+            # Extract package name
+            package=$(echo "$line" | cut -d'=' -f1 | xargs)
+
+            # Get the installed version from venv
+            version=$(pip show "$package" | grep Version | cut -d' ' -f2)
+
+            # if the version is installed, apend it to temp_file
+            if [ -n "$version" ]; then
+                log "$package==$version" success
+                echo "$package==$version" >> "$temp_file"
+            else
+                log "$line" warning
+                echo "$line" >> "$temp_file"  #  Keeps the original line if the package is not installed
+            fi
+        fi
+
+    done < requirements.txt
+
+    mv "$temp_file" requirements.txt
+    log "requirements.txt was updated." success
+}
+
+
+devhelp(){
+
+    log "Help Menu" title
+    echo "Command       Description"
+    echo "devclean      Clean all pycache and temporary python files"
+    echo "devpack       Export the current project to a zip file"
+    echo "devreq        Update packages without version to the last, in requirements.txt"
+    echo "devstop       Deactivate devstart script"
+}
+
+#================================
+# Main
+#================================
+
+. "${HOME}/.dev/lib/lib.sh"
+. "${HOME}/.dev/.env"
+
+project_name=$(basename "$PWD")
+
+log "Python DevStart" intro "1.0"
+
+current_venv_dir=".venv"
+
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    echo "You need to execute devstart with '.' or source."
+    echo "Example: . devstart"
+    exit 0
+fi
+
+log "Preparing Python development environment..." title
+
+if [[ ! -f requirements.txt ]]; then
+    log "Error: requirements.txt not found." warn
+    return
+fi
+
+if [[ "$DEV_STARTED" == "True" ]]; then
+    return
+fi
+
+_OLD_PS1="${PS1:-}"
+    PS1="devstart->${PS1:-}"
+    export PS1
+    DEV_STARTED="True"
+    export DEV_STARTED
+
+if [[ "$VIRTUAL_ENV" != "" ]]; then
+    log "Deactivating current venv..." title
+    deactivate
+    sleep 2
+fi
+
+if [[ -d "${current_venv_dir}" ]]; then
+    sleep 2
+        log "Removing venv dir ('${current_venv_dir}')..." title
+        rm -Rfv "${current_venv_dir}"
+fi
+
+log "Creating new venv..." title
+python3 -m venv "${current_venv_dir}"
+source "${current_venv_dir}/bin/activate"
+
+log "Installing equirements..." title
+pip install -r requirements.txt
+
+log "Virtual Environment '$project_name' was configured." success
