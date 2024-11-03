@@ -102,16 +102,20 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     echo "Checking PATH on .bashrc..."
 
     if ! grep -q "export PATH=.*$SCRIPT_BIN_DIRECTORY" ~/.bashrc; then
+        # Copying .env file
+        echo "Copying .env file to '${HOME}/.env-crema-script'..."
+        cp -v "${SCRIPT_BASE_DIRECTORY}/.env" "${HOME}/.env-crema-script"
+
         # Adding bin to .bashrc
         echo "Configuring '$SCRIPT_BIN_DIRECTORY' to PATH on file .bashrc..."
         echo "export PATH=\"\$PATH:$SCRIPT_BIN_DIRECTORY\"" >> ~/.bashrc
-        echo "Crema Script has been configured in .bashrc. To use it, run: 'source devstart' in your Python project directory."
+        echo "Crema Script has been configured in .bashrc. To use it, restart your terminal session and run: 'source devstart' in your Python project directory."
         exit
     fi
 fi
 
 . "${SCRIPT_BASE_DIRECTORY}/lib/lib.sh"
-. "${SCRIPT_BASE_DIRECTORY}/.env"
+. "${HOME}/.env-crema-script"
 
 project_name=$(basename "$PWD")
 
