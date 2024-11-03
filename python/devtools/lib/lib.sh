@@ -27,8 +27,9 @@ printLogo()
   \___||_|  \___||_|_|_| \__,_| |___/\__||_|  |_|| .__/  \__| 
                                                  |_|          
 
-        By: Bruno Crema Ferreira - MIT license                                            
-
+    Copyright (c) 2024 Bruno Crema Ferreira
+    OpenSource - MIT License                                                 
+    
 EOF
 echo -e "${NC}"
 }
