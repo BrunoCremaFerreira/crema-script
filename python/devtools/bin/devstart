@@ -95,8 +95,23 @@ devhelp(){
 # Main
 #================================
 
-. "${HOME}/.dev/lib/lib.sh"
-. "${HOME}/.dev/.env"
+SCRIPT_BIN_DIRECTORY=$(dirname "$(realpath "${BASH_SOURCE[0]}")")
+SCRIPT_BASE_DIRECTORY=$(dirname "$SCRIPT_BIN_DIRECTORY")
+
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    echo "Checking PATH on .bashrc..."
+
+    if ! grep -q "export PATH=.*$SCRIPT_BIN_DIRECTORY" ~/.bashrc; then
+        # Adding bin to .bashrc
+        echo "Configuring '$SCRIPT_BIN_DIRECTORY' to PATH on file .bashrc..."
+        echo "export PATH=\"\$PATH:$SCRIPT_BIN_DIRECTORY\"" >> ~/.bashrc
+        echo "Crema Script has been configured in .bashrc. To use it, run: 'source devstart' in your Python project directory."
+        exit
+    fi
+fi
+
+. "${SCRIPT_BASE_DIRECTORY}/lib/lib.sh"
+. "${SCRIPT_BASE_DIRECTORY}/.env"
 
 project_name=$(basename "$PWD")
 
@@ -122,10 +137,10 @@ if [[ "$DEV_STARTED" == "True" ]]; then
 fi
 
 _OLD_PS1="${PS1:-}"
-    PS1="devstart->${PS1:-}"
-    export PS1
-    DEV_STARTED="True"
-    export DEV_STARTED
+PS1="devstart->${PS1:-}"
+export PS1
+DEV_STARTED="True"
+export DEV_STARTED
 
 if [[ "$VIRTUAL_ENV" != "" ]]; then
     log "Deactivating current venv..." title
