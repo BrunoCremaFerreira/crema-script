@@ -86,7 +86,7 @@ jup(){
     fi
 
     if ! pip show jupyter &>/dev/null; then
-        pip -m install jupyter notebook ipykernel
+        python -m pip install jupyter notebook ipykernel
     fi
     jupyter notebook &
 
