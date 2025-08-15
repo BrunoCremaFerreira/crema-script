@@ -80,6 +80,18 @@ devreq(){
     log "requirements.txt was updated." success
 }
 
+jup(){
+    if [[ "$DEV_STARTED" != "True" ]]; then
+        return
+    fi
+
+    if ! pip show jupyter &>/dev/null; then
+        pip -m install jupyter notebook ipykernel
+    fi
+    jupyter notebook &
+
+}
+
 
 devhelp(){
 
@@ -89,6 +101,7 @@ devhelp(){
     echo "devpack       Export the current project to a zip file"
     echo "devreq        Update packages without version to the last, in requirements.txt"
     echo "devstop       Deactivate devstart script"
+    echo "jup           Install and run Jupyter Nodebook on current venv"
 }
 
 #================================
