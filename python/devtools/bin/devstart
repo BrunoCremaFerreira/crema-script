@@ -1,5 +1,5 @@
 
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Title:  Python Development Tools
 # Author: Bruno Crema Ferreira - MIT License
@@ -110,21 +110,43 @@ devhelp(){
 # Main
 #================================
 
-SCRIPT_BIN_DIRECTORY=$(dirname "$(realpath "${BASH_SOURCE[0]}")")
+_script_dir() {
+    local src="${BASH_SOURCE[0]}"
+    while [ -L "$src" ]; do
+        local d; d="$(cd -P "$(dirname "$src")" && pwd)"
+        src="$(readlink "$src")"
+        [[ "$src" != /* ]] && src="$d/$src"
+    done
+    cd -P "$(dirname "$src")" && pwd
+}
+
+_shell_rc() {
+    case "$(basename "$SHELL")" in
+        zsh)  echo "${HOME}/.zshrc" ;;
+        bash)
+            [[ "$(uname)" == "Darwin" ]] \
+                && echo "${HOME}/.bash_profile" \
+                || echo "${HOME}/.bashrc" ;;
+        *)    echo "${HOME}/.profile" ;;
+    esac
+}
+
+SCRIPT_BIN_DIRECTORY=$(_script_dir)
 SCRIPT_BASE_DIRECTORY=$(dirname "$SCRIPT_BIN_DIRECTORY")
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    echo "Checking PATH on .bashrc..."
+    SHELL_RC=$(_shell_rc)
+    echo "Checking PATH on ${SHELL_RC}..."
 
-    if ! grep -q "export PATH=.*$SCRIPT_BIN_DIRECTORY" ~/.bashrc; then
+    if ! grep -q "export PATH=.*$SCRIPT_BIN_DIRECTORY" "$SHELL_RC"; then
         # Copying .env file
         echo "Copying .env file to '${HOME}/.env-crema-script'..."
         cp -v "${SCRIPT_BASE_DIRECTORY}/.env" "${HOME}/.env-crema-script"
 
-        # Adding bin to .bashrc
-        echo "Configuring '$SCRIPT_BIN_DIRECTORY' to PATH on file .bashrc..."
-        echo "export PATH=\"\$PATH:$SCRIPT_BIN_DIRECTORY\"" >> ~/.bashrc
-        echo "Crema Script has been configured in .bashrc. To use it, restart your terminal session and run: 'source devstart' in your Python project directory."
+        # Adding bin to shell rc file
+        echo "Configuring '$SCRIPT_BIN_DIRECTORY' to PATH on file ${SHELL_RC}..."
+        echo "export PATH=\"\$PATH:$SCRIPT_BIN_DIRECTORY\"" >> "$SHELL_RC"
+        echo "Crema Script has been configured in ${SHELL_RC}. To use it, restart your terminal session and run: 'source devstart' in your Python project directory."
         exit
     fi
 fi
