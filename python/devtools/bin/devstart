@@ -161,7 +161,7 @@ if [[ "$DEV_STARTED" == "True" ]] && [[ "$force_recreate" != "true" ]]; then
 fi
 
 _OLD_PS1="${PS1:-}"
-PS1="devstart->${PS1:-}"
+PS1="devstart[\$(git branch --show-current 2>/dev/null)]->${_OLD_PS1:-}"
 export PS1
 DEV_STARTED="True"
 export DEV_STARTED
