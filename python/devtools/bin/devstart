@@ -96,12 +96,14 @@ jup(){
 devhelp(){
 
     log "Help Menu" title
-    echo "Command       Description"
-    echo "devclean      Clean all pycache and temporary python files"
-    echo "devpack       Export the current project to a zip file"
-    echo "devreq        Update packages without version to the last, in requirements.txt"
-    echo "devstop       Deactivate devstart script"
-    echo "jup           Install and run Jupyter Nodebook on current venv"
+    echo "Command              Description"
+    echo "source devstart      Activate venv (creates if not exists) and install requirements"
+    echo "source devstart -f   Recreate .venv from scratch and install requirements"
+    echo "devclean             Clean all pycache and temporary python files"
+    echo "devpack              Export the current project to a zip file"
+    echo "devreq               Update packages without version to the last, in requirements.txt"
+    echo "devstop              Deactivate devstart script"
+    echo "jup                  Install and run Jupyter Notebook on current venv"
 }
 
 #================================
@@ -136,6 +138,11 @@ log "Python DevStart" intro "1.0"
 
 current_venv_dir=".venv"
 
+force_recreate=false
+if [[ "$1" == "-f" ]]; then
+    force_recreate=true
+fi
+
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     echo "You need to execute devstart with '.' or source."
     echo "Example: . devstart"
@@ -149,7 +156,7 @@ if [[ ! -f requirements.txt ]]; then
     return
 fi
 
-if [[ "$DEV_STARTED" == "True" ]]; then
+if [[ "$DEV_STARTED" == "True" ]] && [[ "$force_recreate" != "true" ]]; then
     return
 fi
 
@@ -162,17 +169,17 @@ export DEV_STARTED
 if [[ "$VIRTUAL_ENV" != "" ]]; then
     log "Deactivating current venv..." title
     deactivate
-    sleep 2
 fi
 
-if [[ -d "${current_venv_dir}" ]]; then
-    sleep 2
-        log "Removing venv dir ('${current_venv_dir}')..." title
-        rm -Rfv "${current_venv_dir}"
+if [[ "$force_recreate" == "true" ]] && [[ -d "${current_venv_dir}" ]]; then
+    log "Removing venv dir ('${current_venv_dir}')..." title
+    rm -Rfv "${current_venv_dir}"
 fi
 
-log "Creating new venv..." title
-python3 -m venv "${current_venv_dir}"
+if [[ ! -d "${current_venv_dir}" ]]; then
+    log "Creating new venv..." title
+    python3 -m venv "${current_venv_dir}"
+fi
 source "${current_venv_dir}/bin/activate"
 
 log "Installing equirements..." title
