@@ -82,7 +82,7 @@ die(){
         log "$message" error
         log "Script aborted." warning
         echo ""
-        exit 1
+        exit "${exitCode}"
 }
 
 #
@@ -93,7 +93,7 @@ checkDependency()
     local cmd="$1"
     local cmdName="$2"
     
-    if [ -x "$(command -v $cmd)" ]; then
+    if [ -x "$(command -v "$cmd")" ]; then
         log "[X] $cmdName is installed..." success
         return 0
     else

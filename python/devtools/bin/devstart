@@ -292,7 +292,7 @@ done
 unset opt
 
 if [[ -n "$requested_version" ]]; then
-    requested_version=$(echo "$requested_version" | grep -oP '^\d+\.\d+')
+    requested_version=$(echo "$requested_version" | grep -Eo '^[0-9]+\.[0-9]+')
 fi
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
@@ -304,7 +304,7 @@ fi
 log "Preparing Python development environment..." title
 
 if [[ ! -f requirements.txt ]]; then
-    log "Error: requirements.txt not found." warn
+    log "Error: requirements.txt not found." error
     return
 fi
 
@@ -351,7 +351,7 @@ if [[ ! -d "${current_venv_dir}" ]]; then
 fi
 source "${current_venv_dir}/bin/activate"
 
-log "Installing equirements..." title
+log "Installing requirements..." title
 pip install -r requirements.txt
 
 log "Virtual Environment '$project_name' was configured." success
