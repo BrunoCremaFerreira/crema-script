@@ -96,14 +96,15 @@ jup(){
 devhelp(){
 
     log "Help Menu" title
-    echo "Command              Description"
-    echo "source devstart      Activate venv (creates if not exists) and install requirements"
-    echo "source devstart -f   Recreate .venv from scratch and install requirements"
-    echo "devclean             Clean all pycache and temporary python files"
-    echo "devpack              Export the current project to a zip file"
-    echo "devreq               Update packages without version to the last, in requirements.txt"
-    echo "devstop              Deactivate devstart script"
-    echo "jup                  Install and run Jupyter Notebook on current venv"
+    echo "Command                   Description"
+    echo "source devstart           Activate venv (creates if not exists) and install requirements"
+    echo "source devstart -f        Recreate .venv from scratch and install requirements"
+    echo "source devstart -v X.Y    Create/activate venv using Python X.Y (recreates if version differs)"
+    echo "devclean                  Clean all pycache and temporary python files"
+    echo "devpack                   Export the current project to a zip file"
+    echo "devreq                    Update packages without version to the last, in requirements.txt"
+    echo "devstop                   Deactivate devstart script"
+    echo "jup                       Install and run Jupyter Notebook on current venv"
 }
 
 #================================
@@ -129,6 +130,13 @@ _shell_rc() {
                 || echo "${HOME}/.bashrc" ;;
         *)    echo "${HOME}/.profile" ;;
     esac
+}
+
+_get_venv_python_version() {
+    local venv_dir="$1"
+    if [[ -f "${venv_dir}/bin/python" ]]; then
+        "${venv_dir}/bin/python" --version 2>&1 | sed 's/Python //' | cut -d. -f1,2
+    fi
 }
 
 SCRIPT_BIN_DIRECTORY=$(_script_dir)
@@ -161,8 +169,18 @@ log "Python DevStart" intro "1.0"
 current_venv_dir=".venv"
 
 force_recreate=false
-if [[ "$1" == "-f" ]]; then
-    force_recreate=true
+requested_version=""
+OPTIND=1
+while getopts "fv:" opt; do
+    case $opt in
+        f) force_recreate=true ;;
+        v) requested_version="$OPTARG" ;;
+    esac
+done
+unset opt
+
+if [[ -n "$requested_version" ]]; then
+    requested_version=$(echo "$requested_version" | grep -oP '^\d+\.\d+')
 fi
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
@@ -188,6 +206,14 @@ export PS1
 DEV_STARTED="True"
 export DEV_STARTED
 
+if [[ -n "$requested_version" ]] && [[ "$force_recreate" != "true" ]] && [[ -d "${current_venv_dir}" ]]; then
+    current_py_version=$(_get_venv_python_version "${current_venv_dir}")
+    if [[ "$current_py_version" != "$requested_version" ]]; then
+        log "Venv Python version ($current_py_version) differs from requested ($requested_version). Recreating..." title
+        force_recreate=true
+    fi
+fi
+
 if [[ "$VIRTUAL_ENV" != "" ]]; then
     log "Deactivating current venv..." title
     deactivate
@@ -200,7 +226,16 @@ fi
 
 if [[ ! -d "${current_venv_dir}" ]]; then
     log "Creating new venv..." title
-    python3 -m venv "${current_venv_dir}"
+    if [[ -n "$requested_version" ]]; then
+        python_cmd="python${requested_version}"
+        if ! command -v "$python_cmd" &>/dev/null; then
+            log "Error: $python_cmd not found. Install it before using -v ${requested_version}." error
+            return 1
+        fi
+    else
+        python_cmd="python3"
+    fi
+    "$python_cmd" -m venv "${current_venv_dir}"
 fi
 source "${current_venv_dir}/bin/activate"
 

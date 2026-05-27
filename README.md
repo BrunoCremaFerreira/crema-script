@@ -57,16 +57,30 @@ source devstart
 
 ### Commands
 
-| Command              | Description                                                        |
-|----------------------|--------------------------------------------------------------------|
-| `source devstart`    | Activate venv (creates if not exists) and install requirements     |
-| `source devstart -f` | Recreate `.venv` from scratch and install requirements             |
-| `devstop`            | Deactivate the dev environment and restore the original prompt     |
-| `devclean`           | Remove all `*.pyc` files and `__pycache__` directories            |
-| `devpack`            | Export the current project as a timestamped `.zip` file           |
-| `devreq`             | Pin all packages in `requirements.txt` to their installed versions |
-| `jup`                | Install (if needed) and launch Jupyter Notebook in the active venv |
-| `devhelp`            | Show the help menu                                                 |
+| Command                   | Description                                                                      |
+|---------------------------|----------------------------------------------------------------------------------|
+| `source devstart`         | Activate venv (creates if not exists) and install requirements                   |
+| `source devstart -f`      | Recreate `.venv` from scratch and install requirements                           |
+| `source devstart -v X.Y`  | Create/activate venv using Python X.Y; auto-recreates if version differs         |
+| `devstop`                 | Deactivate the dev environment and restore the original prompt                   |
+| `devclean`                | Remove all `*.pyc` files and `__pycache__` directories                           |
+| `devpack`                 | Export the current project as a timestamped `.zip` file                          |
+| `devreq`                  | Pin all packages in `requirements.txt` to their installed versions               |
+| `jup`                     | Install (if needed) and launch Jupyter Notebook in the active venv               |
+| `devhelp`                 | Show the help menu                                                               |
+
+### Python Version Selection
+
+Pass `-v X.Y` to pin the venv to a specific Python version:
+
+```bash
+source devstart -v 3.12
+```
+
+- If no venv exists, it is created with `python3.12`.
+- If a venv already exists with a **different** Python version, it is automatically recreated.
+- If a venv already exists with the **same** version, it is activated as-is.
+- Combine with `-f` to force a full recreate regardless: `source devstart -f -v 3.12`.
 
 ### PS1 Prompt
 
