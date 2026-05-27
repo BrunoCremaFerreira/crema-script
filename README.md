@@ -57,17 +57,25 @@ source devstart
 
 ### Commands
 
-| Command                   | Description                                                                      |
-|---------------------------|----------------------------------------------------------------------------------|
-| `source devstart`         | Activate venv (creates if not exists) and install requirements                   |
-| `source devstart -f`      | Recreate `.venv` from scratch and install requirements                           |
-| `source devstart -v X.Y`  | Create/activate venv using Python X.Y; auto-recreates if version differs         |
-| `devstop`                 | Deactivate the dev environment and restore the original prompt                   |
-| `devclean`                | Remove all `*.pyc` files and `__pycache__` directories                           |
-| `devpack`                 | Export the current project as a timestamped `.zip` file                          |
-| `devreq`                  | Pin all packages in `requirements.txt` to their installed versions               |
-| `jup`                     | Install (if needed) and launch Jupyter Notebook in the active venv               |
-| `devhelp`                 | Show the help menu                                                               |
+| Command                      | Description                                                                      |
+|------------------------------|----------------------------------------------------------------------------------|
+| `source devstart`            | Activate venv (creates if not exists) and install requirements                   |
+| `source devstart -f`         | Recreate `.venv` from scratch and install requirements                           |
+| `source devstart -v X.Y`     | Create/activate venv using Python X.Y; auto-recreates if version differs         |
+| `devstop`                    | Deactivate the dev environment and restore the original prompt                   |
+| `devclean`                   | Remove all `*.pyc` files and `__pycache__` directories                           |
+| `devpack`                    | Export the current project as a timestamped `.zip` file                          |
+| `devreq`                     | Pin all packages in `requirements.txt` to their installed versions               |
+| `devdeps`                    | Show outdated packages (`pip list --outdated`)                                   |
+| `devupgrade`                 | Upgrade all packages in `requirements.txt` to latest and re-pin versions         |
+| `devtest`                    | Run pytest; includes coverage report if `pytest-cov` is installed                |
+| `devlint`                    | Lint with `ruff` (fallback: `flake8`)                                            |
+| `devformat`                  | Format with `ruff` (fallback: `black`)                                           |
+| `devci`                      | Run full CI pipeline: `devformat` → `devlint` → `devtest`                       |
+| `devdoc`                     | Launch documentation server with `pdoc` (fallback: `mkdocs serve`)              |
+| `devprofile <script.py>`     | Profile a Python script with `cProfile` (sorted by cumulative time)             |
+| `jup`                        | Install (if needed) and launch Jupyter Notebook in the active venv               |
+| `devhelp`                    | Show the help menu                                                               |
 
 ### Python Version Selection
 

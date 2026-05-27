@@ -93,6 +93,110 @@ jup(){
 }
 
 
+devtest(){
+    if [[ "$DEV_STARTED" != "True" ]]; then
+        return
+    fi
+    log "Running Tests" title
+    if ! command -v pytest &>/dev/null; then
+        log "pytest not found. Install it with: pip install pytest" error
+        return 1
+    fi
+    if pip show pytest-cov &>/dev/null; then
+        pytest --tb=short --cov
+    else
+        pytest --tb=short
+    fi
+}
+
+devlint(){
+    if [[ "$DEV_STARTED" != "True" ]]; then
+        return
+    fi
+    log "Linting" title
+    if command -v ruff &>/dev/null; then
+        ruff check .
+    elif command -v flake8 &>/dev/null; then
+        flake8 .
+    else
+        log "No linter found. Install ruff with: pip install ruff" error
+        return 1
+    fi
+}
+
+devformat(){
+    if [[ "$DEV_STARTED" != "True" ]]; then
+        return
+    fi
+    log "Formatting" title
+    if command -v ruff &>/dev/null; then
+        ruff format .
+    elif command -v black &>/dev/null; then
+        black .
+    else
+        log "No formatter found. Install ruff with: pip install ruff" error
+        return 1
+    fi
+}
+
+devci(){
+    if [[ "$DEV_STARTED" != "True" ]]; then
+        return
+    fi
+    log "CI Pipeline" title
+    devformat && devlint && devtest
+}
+
+devdeps(){
+    if [[ "$DEV_STARTED" != "True" ]]; then
+        return
+    fi
+    log "Outdated Packages" title
+    pip list --outdated
+}
+
+devupgrade(){
+    if [[ "$DEV_STARTED" != "True" ]]; then
+        return
+    fi
+    log "Upgrading Packages" title
+    while IFS= read -r line; do
+        if [[ "$line" == \#* || -z "$line" ]]; then
+            continue
+        fi
+        package=$(echo "$line" | cut -d'=' -f1 | xargs)
+        pip install --upgrade "$package"
+    done < requirements.txt
+    devreq
+}
+
+devdoc(){
+    if [[ "$DEV_STARTED" != "True" ]]; then
+        return
+    fi
+    log "Documentation Server" title
+    if command -v pdoc &>/dev/null; then
+        pdoc --http :
+    elif command -v mkdocs &>/dev/null; then
+        mkdocs serve
+    else
+        log "No doc tool found. Install pdoc with: pip install pdoc" error
+        return 1
+    fi
+}
+
+devprofile(){
+    if [[ "$DEV_STARTED" != "True" ]]; then
+        return
+    fi
+    if [[ -z "$1" ]]; then
+        log "Usage: devprofile <script.py>" error
+        return 1
+    fi
+    log "Profiling $1" title
+    python -m cProfile -s cumulative "$1"
+}
+
 devhelp(){
 
     log "Help Menu" title
@@ -100,10 +204,18 @@ devhelp(){
     echo "source devstart           Activate venv (creates if not exists) and install requirements"
     echo "source devstart -f        Recreate .venv from scratch and install requirements"
     echo "source devstart -v X.Y    Create/activate venv using Python X.Y (recreates if version differs)"
+    echo "devstop                   Deactivate devstart script"
     echo "devclean                  Clean all pycache and temporary python files"
     echo "devpack                   Export the current project to a zip file"
-    echo "devreq                    Update packages without version to the last, in requirements.txt"
-    echo "devstop                   Deactivate devstart script"
+    echo "devreq                    Pin all installed packages to requirements.txt"
+    echo "devdeps                   Show outdated packages"
+    echo "devupgrade                Upgrade all packages in requirements.txt to latest"
+    echo "devtest                   Run pytest (with coverage if pytest-cov is installed)"
+    echo "devlint                   Lint with ruff (fallback: flake8)"
+    echo "devformat                 Format with ruff (fallback: black)"
+    echo "devci                     Run full CI pipeline: format -> lint -> test"
+    echo "devdoc                    Launch docs server with pdoc (fallback: mkdocs)"
+    echo "devprofile <script.py>    Profile a script with cProfile"
     echo "jup                       Install and run Jupyter Notebook on current venv"
 }
 
