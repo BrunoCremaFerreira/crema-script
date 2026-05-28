@@ -93,7 +93,7 @@ checkDependency()
     local cmd="$1"
     local cmdName="$2"
     
-    if [ -x "$(command -v "$cmd")" ]; then
+    if command -v "$cmd" > /dev/null 2>&1; then
         log "[X] $cmdName is installed..." success
         return 0
     else
@@ -124,8 +124,12 @@ checkIfIsRoot()
 startContainer()
 {
     local containerName="$1"
+    if ! command -v docker > /dev/null 2>&1; then
+        log "Error: Docker is not installed." error
+        return 1
+    fi
     log "Starting $containerName container..." information
-    if [ ! "$(sudo docker ps -q -f name=${containerName})" ]; 
+    if [ ! "$(sudo docker ps -q -f name=${containerName})" ];
     then
         sudo docker container start "${containerName}"
     else
@@ -138,9 +142,13 @@ startContainer()
 #
 stopContainer()
 {
-    containerName="$1"
+    local containerName="$1"
+    if ! command -v docker > /dev/null 2>&1; then
+        log "Error: Docker is not installed." error
+        return 1
+    fi
     log "Stopping ${containerName} container..." information
-    if [ ! "$(sudo docker ps -q -f name=${containerName})" ]; 
+    if [ ! "$(sudo docker ps -q -f name=${containerName})" ];
     then
         log "Docker container '${containerName}' already stopped..." success
     else

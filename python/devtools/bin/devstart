@@ -10,14 +10,17 @@
 #==================================
 
 devstop() {
-    deactivate
+    if declare -f deactivate > /dev/null; then
+        deactivate
+    fi
     unset DEV_STARTED
 
-    if [ -n "${_OLD_PS1:-}" ] ; then
-        PS1="${_OLD_PS1:-}"
+    if [ -n "${_OLD_PS1:-}" ]; then
+        PS1="${_OLD_PS1}"
         export PS1
         unset _OLD_PS1
     fi
+    unset -f devclean devpack devreq devdeps devupgrade devtest devlint devformat devci devdoc devprofile jup devhelp devstop
 }
 
 devclean() {
@@ -35,13 +38,21 @@ devpack(){
     log "Package Generation" title
 
     devclean
-    local base_current_dir_name=$(basename "$PWD")
-    
-    timestamp=$(date +"%Y%m%d.%H.%M.%S")
-    output_file="${PACKAGES_DIRECTORY}/${timestamp}-${base_current_dir_name}.zip"
+    local base_current_dir_name
+    base_current_dir_name=$(basename "$PWD")
 
-    zip -r "$output_file" . -x "./.*" -x "./*.zip"
-    log "Package file '$output_file' was created." success
+    mkdir -p "$PACKAGES_DIRECTORY" || { log "Error: Cannot create $PACKAGES_DIRECTORY." error; return 1; }
+
+    local timestamp
+    timestamp=$(date +"%Y%m%d.%H.%M.%S")
+    local output_file="${PACKAGES_DIRECTORY}/${timestamp}-${base_current_dir_name}.zip"
+
+    if zip -r "$output_file" . -x "./.*" -x "./*.zip"; then
+        log "Package file '$output_file' was created." success
+    else
+        log "Error: Failed to create package '$output_file'." error
+        return 1
+    fi
 }
 
 
@@ -49,28 +60,31 @@ devreq(){
 
     log "Updating requirements.txt..." title
 
-    temp_file=$(mktemp)
+    if [[ ! -f requirements.txt ]]; then
+        log "Error: requirements.txt not found." error
+        return 1
+    fi
 
-    # Read each line from requirements.txt
+    local temp_file
+    temp_file=$(mktemp)
+    trap "rm -f '$temp_file'" RETURN
+
     while IFS= read -r line; do
 
-        # Check if the line is empty
         if [[ "$line" == \#* || -z "$line" ]]; then
             echo "$line" >> "$temp_file"
         else
-            # Extract package name
-            package=$(echo "$line" | cut -d'=' -f1 | xargs)
+            # Extract package name (handles ==, >=, <=, ~=, !=, [extras])
+            package=$(echo "$line" | sed 's/[>=<!~\[].*//' | xargs)
 
-            # Get the installed version from venv
-            version=$(pip show "$package" | grep Version | cut -d' ' -f2)
+            version=$(pip show "$package" 2>/dev/null | grep Version | cut -d' ' -f2)
 
-            # if the version is installed, apend it to temp_file
             if [ -n "$version" ]; then
                 log "$package==$version" success
                 echo "$package==$version" >> "$temp_file"
             else
                 log "$line" warning
-                echo "$line" >> "$temp_file"  #  Keeps the original line if the package is not installed
+                echo "$line" >> "$temp_file"
             fi
         fi
 
@@ -82,7 +96,8 @@ devreq(){
 
 jup(){
     if [[ "$DEV_STARTED" != "True" ]]; then
-        return
+        log "Run 'source devstart' first." warning
+        return 1
     fi
 
     if ! pip show jupyter &>/dev/null; then
@@ -95,7 +110,8 @@ jup(){
 
 devtest(){
     if [[ "$DEV_STARTED" != "True" ]]; then
-        return
+        log "Run 'source devstart' first." warning
+        return 1
     fi
     log "Running Tests" title
     if ! command -v pytest &>/dev/null; then
@@ -111,7 +127,8 @@ devtest(){
 
 devlint(){
     if [[ "$DEV_STARTED" != "True" ]]; then
-        return
+        log "Run 'source devstart' first." warning
+        return 1
     fi
     log "Linting" title
     if command -v ruff &>/dev/null; then
@@ -126,7 +143,8 @@ devlint(){
 
 devformat(){
     if [[ "$DEV_STARTED" != "True" ]]; then
-        return
+        log "Run 'source devstart' first." warning
+        return 1
     fi
     log "Formatting" title
     if command -v ruff &>/dev/null; then
@@ -141,7 +159,8 @@ devformat(){
 
 devci(){
     if [[ "$DEV_STARTED" != "True" ]]; then
-        return
+        log "Run 'source devstart' first." warning
+        return 1
     fi
     log "CI Pipeline" title
     devformat && devlint && devtest
@@ -149,7 +168,8 @@ devci(){
 
 devdeps(){
     if [[ "$DEV_STARTED" != "True" ]]; then
-        return
+        log "Run 'source devstart' first." warning
+        return 1
     fi
     log "Outdated Packages" title
     pip list --outdated
@@ -157,14 +177,15 @@ devdeps(){
 
 devupgrade(){
     if [[ "$DEV_STARTED" != "True" ]]; then
-        return
+        log "Run 'source devstart' first." warning
+        return 1
     fi
     log "Upgrading Packages" title
     while IFS= read -r line; do
         if [[ "$line" == \#* || -z "$line" ]]; then
             continue
         fi
-        package=$(echo "$line" | cut -d'=' -f1 | xargs)
+        package=$(echo "$line" | sed 's/[>=<!~\[].*//' | xargs)
         pip install --upgrade "$package"
     done < requirements.txt
     devreq
@@ -172,7 +193,8 @@ devupgrade(){
 
 devdoc(){
     if [[ "$DEV_STARTED" != "True" ]]; then
-        return
+        log "Run 'source devstart' first." warning
+        return 1
     fi
     log "Documentation Server" title
     if command -v pdoc &>/dev/null; then
@@ -187,7 +209,8 @@ devdoc(){
 
 devprofile(){
     if [[ "$DEV_STARTED" != "True" ]]; then
-        return
+        log "Run 'source devstart' first." warning
+        return 1
     fi
     if [[ -z "$1" ]]; then
         log "Usage: devprofile <script.py>" error
@@ -352,6 +375,9 @@ fi
 source "${current_venv_dir}/bin/activate"
 
 log "Installing requirements..." title
-pip install -r requirements.txt
-
-log "Virtual Environment '$project_name' was configured." success
+if pip install -r requirements.txt; then
+    log "Virtual Environment '$project_name' was configured." success
+else
+    log "Error: Failed to install requirements." error
+    return 1
+fi
