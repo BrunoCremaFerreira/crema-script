@@ -6,6 +6,14 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     exit 0
 fi
 
+if command -v docker &>/dev/null; then
+    CONTAINER_CMD="docker"
+elif command -v podman &>/dev/null; then
+    CONTAINER_CMD="podman"
+else
+    CONTAINER_CMD=""
+fi
+
 #Text Decorations
 RED='\033[1;31m'
 YLL='\033[1;33m'
@@ -124,16 +132,22 @@ checkIfIsRoot()
 startContainer()
 {
     local containerName="$1"
-    if ! command -v docker > /dev/null 2>&1; then
-        log "Error: Docker is not installed." error
+    if [[ -z "$CONTAINER_CMD" ]]; then
+        log "Error: Neither Docker nor Podman is installed." error
         return 1
     fi
-    log "Starting $containerName container..." information
-    if [ ! "$(sudo docker ps -q -f name=${containerName})" ];
-    then
-        sudo docker container start "${containerName}"
+    local container_exec
+    if [[ "$CONTAINER_CMD" == "docker" ]]; then
+        container_exec=(sudo docker)
     else
-        log "Docker container '${containerName}' already started..." success
+        container_exec=("$CONTAINER_CMD")
+    fi
+    log "Starting $containerName container..." information
+    if [ ! "$("${container_exec[@]}" ps -q -f name=${containerName})" ];
+    then
+        "${container_exec[@]}" container start "${containerName}"
+    else
+        log "Container '${containerName}' already started..." success
     fi
 }
 
@@ -143,16 +157,22 @@ startContainer()
 stopContainer()
 {
     local containerName="$1"
-    if ! command -v docker > /dev/null 2>&1; then
-        log "Error: Docker is not installed." error
+    if [[ -z "$CONTAINER_CMD" ]]; then
+        log "Error: Neither Docker nor Podman is installed." error
         return 1
     fi
-    log "Stopping ${containerName} container..." information
-    if [ ! "$(sudo docker ps -q -f name=${containerName})" ];
-    then
-        log "Docker container '${containerName}' already stopped..." success
+    local container_exec
+    if [[ "$CONTAINER_CMD" == "docker" ]]; then
+        container_exec=(sudo docker)
     else
-        log "Stopping docker container '${containerName}'..." success
-        sudo docker container stop "${containerName}"
+        container_exec=("$CONTAINER_CMD")
+    fi
+    log "Stopping ${containerName} container..." information
+    if [ ! "$("${container_exec[@]}" ps -q -f name=${containerName})" ];
+    then
+        log "Container '${containerName}' already stopped..." success
+    else
+        log "Stopping container '${containerName}'..." success
+        "${container_exec[@]}" container stop "${containerName}"
     fi
 }

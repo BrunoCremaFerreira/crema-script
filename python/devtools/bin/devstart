@@ -226,8 +226,8 @@ devdbuild(){
         return 1
     fi
     log "Docker Build" title
-    if ! command -v docker &>/dev/null; then
-        log "Error: Docker is not installed." error
+    if [[ -z "$CONTAINER_CMD" ]]; then
+        log "Error: Neither Docker nor Podman is installed." error
         return 1
     fi
     if [[ ! -f "Dockerfile" ]]; then
@@ -241,7 +241,7 @@ devdbuild(){
     else
         image_name="$dir_name"
     fi
-    if docker build -t "$image_name" .; then
+    if "$CONTAINER_CMD" build -t "$image_name" .; then
         log "Docker image '$image_name' was built successfully." success
     else
         log "Error: Docker build failed." error
