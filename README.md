@@ -74,6 +74,7 @@ source devstart
 | `devci`                      | Run full CI pipeline: `devformat` → `devlint` → `devtest`                       |
 | `devdoc`                     | Launch documentation server with `pdoc` (fallback: `mkdocs serve`)              |
 | `devprofile <script.py>`     | Profile a Python script with `cProfile` (sorted by cumulative time)             |
+| `devdbuild`                  | Build Docker image from the `Dockerfile` in the current project directory        |
 | `jup`                        | Install (if needed) and launch Jupyter Notebook in the active venv               |
 | `devhelp`                    | Show the help menu                                                               |
 

@@ -20,7 +20,7 @@ devstop() {
         export PS1
         unset _OLD_PS1
     fi
-    unset -f devclean devpack devreq devdeps devupgrade devtest devlint devformat devci devdoc devprofile jup devhelp devstop
+    unset -f devclean devpack devreq devdeps devupgrade devtest devlint devformat devci devdoc devprofile devdbuild jup devhelp devstop
 }
 
 devclean() {
@@ -220,6 +220,35 @@ devprofile(){
     python -m cProfile -s cumulative "$1"
 }
 
+devdbuild(){
+    if [[ "$DEV_STARTED" != "True" ]]; then
+        log "Run 'source devstart' first." warning
+        return 1
+    fi
+    log "Docker Build" title
+    if ! command -v docker &>/dev/null; then
+        log "Error: Docker is not installed." error
+        return 1
+    fi
+    if [[ ! -f "Dockerfile" ]]; then
+        log "Error: Dockerfile not found in current directory." error
+        return 1
+    fi
+    local dir_name image_name
+    dir_name=$(basename "$PWD")
+    if [[ "$dir_name" == "src" ]]; then
+        image_name=$(basename "$(dirname "$PWD")")
+    else
+        image_name="$dir_name"
+    fi
+    if docker build -t "$image_name" .; then
+        log "Docker image '$image_name' was built successfully." success
+    else
+        log "Error: Docker build failed." error
+        return 1
+    fi
+}
+
 devhelp(){
 
     log "Help Menu" title
@@ -239,6 +268,7 @@ devhelp(){
     echo "devci                     Run full CI pipeline: format -> lint -> test"
     echo "devdoc                    Launch docs server with pdoc (fallback: mkdocs)"
     echo "devprofile <script.py>    Profile a script with cProfile"
+    echo "devdbuild                 Build Docker image from Dockerfile in current directory"
     echo "jup                       Install and run Jupyter Notebook on current venv"
 }
 
