@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  shellcheck:
+    name: ShellCheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ShellCheck
+        run: sudo apt-get install -y shellcheck
+
+      - name: Lint shell scripts
+        run: |
+          shellcheck python/devtools/bin/devstart
+          shellcheck python/devtools/lib/lib.sh
+
+  test:
+    name: Bats Tests
+    runs-on: ubuntu-latest
+    needs: shellcheck
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup bats and helper libraries
+        uses: bats-core/bats-action@3.0.0
+
+      - name: Run tests
+        run: bats --recursive tests/
+        env:
+          BATS_LIB_PATH: ${{ env.BATS_LIB_PATH }}

@@ -327,6 +327,10 @@ fi
 . "${SCRIPT_BASE_DIRECTORY}/lib/lib.sh"
 . "${HOME}/.env-crema-script"
 
+if [[ "${BASH_LOAD_FUNCTIONS_ONLY:-false}" == "true" ]]; then
+    return 0
+fi
+
 project_name=$(basename "$PWD")
 
 log "Python DevStart" intro "1.0"
