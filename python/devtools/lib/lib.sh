@@ -116,7 +116,7 @@ checkDependency()
 checkIfIsRoot()
 {
     #Root Login
-    if [ $(id -u) -eq 0 ]
+    if [ "$(id -u)" -eq 0 ]
     then 
         log "[X] Running as Root..." success
         return 0
@@ -143,7 +143,7 @@ startContainer()
         container_exec=("$CONTAINER_CMD")
     fi
     log "Starting $containerName container..." information
-    if [ ! "$("${container_exec[@]}" ps -q -f name=${containerName})" ];
+    if [ ! "$("${container_exec[@]}" ps -q -f name="${containerName}")" ];
     then
         "${container_exec[@]}" container start "${containerName}"
     else
@@ -168,7 +168,7 @@ stopContainer()
         container_exec=("$CONTAINER_CMD")
     fi
     log "Stopping ${containerName} container..." information
-    if [ ! "$("${container_exec[@]}" ps -q -f name=${containerName})" ];
+    if [ ! "$("${container_exec[@]}" ps -q -f name="${containerName}")" ];
     then
         log "Container '${containerName}' already stopped..." success
     else

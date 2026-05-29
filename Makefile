@@ -7,7 +7,7 @@ test: ## Run all bats tests
 	$(BATS) --recursive $(TESTS)
 
 shellcheck: ## Lint shell scripts with shellcheck
-	shellcheck python/devtools/bin/devstart python/devtools/lib/lib.sh
+	shellcheck -x python/devtools/bin/devstart python/devtools/lib/lib.sh
 
 setup: ## Add bats submodules (run once after cloning)
 	git submodule add https://github.com/bats-core/bats-core     tests/bats/bats-core  || true
