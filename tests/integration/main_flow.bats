@@ -4,8 +4,8 @@
 # that inherits HOME and PATH from the bats setup (which already has TEST_BIN
 # prepended and MOCK_HOME as HOME).
 
-load '../bats/bats-support/load'
-load '../bats/bats-assert/load'
+load 'bats-support/load'
+load 'bats-assert/load'
 load '../helpers/common'
 
 setup() {
